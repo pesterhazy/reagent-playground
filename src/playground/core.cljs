@@ -2,9 +2,17 @@
   (:require [reagent.core :as r]))
 
 (defn root-ui []
-  [:div
-   [:div "Welcome"]
-   [:input]])
+  [:div.p-5.my-form.bg-white
+   [:div
+    [:h3 "Reagent playground"]
+    [:p "Type into this input box"]
+    [:div.form-box
+     [:form
+      [:fieldset.form-group
+       [:label {:for "test"} "Some input"]
+       [:input.form-control {:type "text"
+                             :id "test"
+                             :placeholder "Your name..."}]]]]]])
 
 ;; Reagent+Figwheel boilerplate
 
