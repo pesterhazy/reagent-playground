@@ -1,6 +1,11 @@
 (ns ^:figwheel-hooks playground.core
   (:require [reagent.core :as r]))
 
+(defn input-ui []
+  [:input.form-control {:type "text"
+                        :id "test"
+                        :placeholder "Your name..."}])
+
 (defn root-ui []
   [:div.p-5.my-form.bg-white
    [:div
@@ -10,9 +15,7 @@
      [:form
       [:fieldset.form-group
        [:label {:for "test"} "Some input"]
-       [:input.form-control {:type "text"
-                             :id "test"
-                             :placeholder "Your name..."}]]]]]])
+       [input-ui]]]]]])
 
 ;; Reagent+Figwheel boilerplate
 
