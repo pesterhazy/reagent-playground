@@ -18,12 +18,14 @@
   (map (partial vec) xs))
 
 (defn db-viewer-ui []
-  (let [!counter (r/atom 0)]
-    (d/listen! !conn (fn []
-                       (swap! !counter inc)))
-    (fn []
-      (prn @!counter)
-      [:pre (-> @!conn (d/datoms :eavt) transmogrify vec pprint with-out-str)])))
+  (r/with-let [!counter (r/atom 0)
+               _ (d/listen! !conn :db-viewer (fn []
+                                               (swap! !counter inc)))]
+    (prn @!counter)
+    [:pre (-> @!conn (d/datoms :eavt) transmogrify vec pprint with-out-str)]
+    (finally
+      (prn [:unlisten])
+      (d/unlisten! !conn :db-viewer))))
 
 (defn root-ui []
   [:div.p-5.my-form.bg-white
