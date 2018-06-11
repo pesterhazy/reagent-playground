@@ -13,22 +13,31 @@
 
 (defn add-item []
   (d/transact! !conn [{:db/id -1
+                       :todo/color "red"
                        :todo/caption "hello"}]))
 
 (defn transmogrify [xs]
   (map (partial vec) xs))
 
-(defn update-view [prev txs]
+(defn update-view-ea [prev txs]
   (reduce (fn [view [e a v]]
-            (update view e (fn [va]
-                             (assoc va a v))))
+            (update view e (fn [va] (assoc va a v))))
+          prev
+          txs))
+
+(defn update-view-ae [prev txs]
+  (reduce (fn [view [e a v]]
+            (update view a (fn [va] (assoc va e v))))
           prev
           txs))
 
 (defn db-viewer-ui []
   (r/with-let [!counter (r/atom 0)
                _ (d/listen! !conn :db-viewer (fn [v]
-                                               (swap! !view (fn [prev] (update-view prev (:tx-data v))))
+                                               (swap! !view (fn [view]
+                                                              (-> view
+                                                                  (update :ea (fn [prev] (update-view-ea prev (:tx-data v))))
+                                                                  (update :ae (fn [prev] (update-view-ae prev (:tx-data v)))))))
                                                (swap! !counter inc)))]
     @!counter
     [:pre (-> @!conn (d/datoms :eavt) transmogrify vec pprint with-out-str)]
@@ -39,6 +48,8 @@
 (defn view-viewer-ui []
   [:pre (-> @!view pprint with-out-str)])
 
+(defn edit-ui []
+  )
 
 (defn root-ui []
   [:div.p-5.my-form.bg-white
