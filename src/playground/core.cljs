@@ -7,6 +7,7 @@
 
 (defonce !counter (r/atom 0))
 (defonce !view (r/atom {}))
+(defonce !txs (r/atom []))
 
 (defn transmogrify [xs]
   (map (partial vec) xs))
@@ -34,12 +35,11 @@
           txs))
 
 (defn on-update [v]
-  (prn [:on-update v])
   (swap! !view (fn [view]
                  (-> view
                      (update :ea (fn [prev] (update-view-ea prev (:tx-data v))))
                      (update :ae (fn [prev] (update-view-ae prev (:tx-data v)))))))
-  (swap! !counter inc))
+  (swap! !txs into (:tx-data v)))
 
 (defn make-conn []
   (let [conn (d/create-conn)]
@@ -69,7 +69,10 @@
 
 (defn db-viewer-ui []
   @!counter
-  [:pre (-> @!conn (d/datoms :eavt) transmogrify vec pprint with-out-str)])
+  [:pre
+   (-> @!txs
+       pprint
+       with-out-str)])
 
 (defn view-viewer-ui []
   [:pre (-> @!view pprint with-out-str)])
