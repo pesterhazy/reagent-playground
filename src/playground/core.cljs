@@ -102,11 +102,11 @@
 
     [:h4 "edit"]
     [edit-ui @!view]
+    [:button {:on-click add-item} "add item"]
     [:h4 "view"]
     [view-viewer-ui]
     [:h4 "tx log"]
     [db-viewer-ui]
-    [:button {:on-click add-item} "add item"]
     #_[:div.form-box
        [:form
         [:fieldset.form-group
