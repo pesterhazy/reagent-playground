@@ -3,18 +3,8 @@
             [clojure.pprint :refer [pprint]]
             [datascript.core :as d]))
 
-(defonce !conn (d/create-conn))
+(defonce !counter (r/atom 0))
 (defonce !view (r/atom {}))
-
-(defn input-ui []
-  [:input.form-control {:type "text"
-                        :id "test"
-                        :placeholder "Your name..."}])
-
-(defn add-item []
-  (d/transact! !conn [{:db/id -1
-                       :todo/color "red"
-                       :todo/caption "hello"}]))
 
 (defn transmogrify [xs]
   (map (partial vec) xs))
@@ -31,19 +21,43 @@
           prev
           txs))
 
+(defn on-update [v]
+  (prn [:on-update v])
+  (swap! !view (fn [view]
+                 (-> view
+                     (update :ea (fn [prev] (update-view-ea prev (:tx-data v))))
+                     (update :ae (fn [prev] (update-view-ae prev (:tx-data v)))))))
+  (swap! !counter inc))
+
+(defn make-conn []
+  (let [conn (d/create-conn)]
+    (d/listen! conn :db-viewer on-update)
+    (d/transact! conn [{:db/id -1
+                        :todo/color "red"
+                        :todo/caption "clean the fridge"}
+                       {:db/id -2
+                        :todo/color "blue"
+                        :todo/caption "take out the garbage"}
+                       {:db/id -3
+                        :todo/color "brown"
+                        :todo/caption "do the laundry"}])
+    conn))
+
+(defonce !conn (make-conn))
+
+(defn input-ui []
+  [:input.form-control {:type "text"
+                        :id "test"
+                        :placeholder "Your name..."}])
+
+(defn add-item []
+  (d/transact! !conn [{:db/id -1
+                       :todo/color (rand-nth ["red" "blue" "brown"])
+                       :todo/caption "hello"}]))
+
 (defn db-viewer-ui []
-  (r/with-let [!counter (r/atom 0)
-               _ (d/listen! !conn :db-viewer (fn [v]
-                                               (swap! !view (fn [view]
-                                                              (-> view
-                                                                  (update :ea (fn [prev] (update-view-ea prev (:tx-data v))))
-                                                                  (update :ae (fn [prev] (update-view-ae prev (:tx-data v)))))))
-                                               (swap! !counter inc)))]
-    @!counter
-    [:pre (-> @!conn (d/datoms :eavt) transmogrify vec pprint with-out-str)]
-    (finally
-      (prn [:unlisten])
-      (d/unlisten! !conn :db-viewer))))
+  @!counter
+  [:pre (-> @!conn (d/datoms :eavt) transmogrify vec pprint with-out-str)])
 
 (defn view-viewer-ui []
   [:pre (-> @!view pprint with-out-str)])
@@ -72,7 +86,7 @@
     [edit-ui @!view]
     [:h4 "view"]
     [view-viewer-ui]
-    [:h4 "op log"]
+    [:h4 "tx log"]
     [db-viewer-ui]
     [:button {:on-click add-item} "add item"]
     #_[:div.form-box
