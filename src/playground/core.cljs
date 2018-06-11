@@ -10,14 +10,24 @@
   (map (partial vec) xs))
 
 (defn update-view-ea [prev txs]
-  (reduce (fn [view [e a v]]
-            (update view e (fn [va] (assoc va a v))))
+  (reduce (fn [view [e a v _ added?]]
+            (update view e (fn [va]
+                             (if added?
+                               (assoc va a v)
+                               (if (= v (get va a))
+                                 (dissoc va a)
+                                 va)))))
           prev
           txs))
 
 (defn update-view-ae [prev txs]
-  (reduce (fn [view [e a v]]
-            (update view a (fn [va] (assoc va e v))))
+  (reduce (fn [view [e a v _ added?]]
+            (update view a (fn [va]
+                             (if added?
+                               (assoc va e v)
+                               (if (= v (get va e))
+                                 (dissoc va e)
+                                 va)))))
           prev
           txs))
 
@@ -62,19 +72,27 @@
 (defn view-viewer-ui []
   [:pre (-> @!view pprint with-out-str)])
 
+(defn remove-item [e]
+  (d/transact! !conn
+               (->> (d/datoms @!conn :eavt e)
+                    (map (fn [[e a v]] [:db/retract e a v])))))
+
 (defn edit-ui [view]
-  [:pre
-   (->> view
-        :ae
-        :todo/caption
-        keys
-        (map (fn [e]
-               (-> view :ea (get e))))
-        (map-indexed (fn [idx ent]
-                       [:div {:key idx}
-                        [:span {:style {:color (:todo/color ent)}}
-                         (:todo/caption ent)]]))
-        )])
+  (into [:ul]
+        (->> view
+             :ae
+             :todo/caption
+             keys
+             (map (fn [e]
+                    (-> view
+                        :ea
+                        (get e)
+                        (assoc :db/id e))))
+             (map-indexed (fn [idx ent]
+                            [:li {:key idx}
+                             [:span {:style {:color (:todo/color ent)}}
+                              (:todo/caption ent)]
+                             [:span " " [:a {:on-click #(remove-item (:db/id ent))} "(X)"]]])))))
 
 (defn root-ui []
   [:div.p-5.my-form.bg-white
