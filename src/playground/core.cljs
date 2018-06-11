@@ -20,7 +20,6 @@
 
 (defn update-view [prev txs]
   (reduce (fn [view [e a v]]
-            (prn [e a v])
             (update view e (fn [va]
                              (assoc va a v))))
           prev
