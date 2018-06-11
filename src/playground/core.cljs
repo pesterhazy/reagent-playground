@@ -10,7 +10,7 @@
 (defonce !txs (r/atom []))
 
 (defn transmogrify [xs]
-  (map (partial vec) xs))
+  (mapv (partial vec) xs))
 
 (defn update-view-ea [prev txs]
   (reduce (fn [view [e a v _ added?]]
@@ -70,9 +70,10 @@
 (defn db-viewer-ui []
   @!counter
   [:pre
-   (-> @!txs
-       pprint
-       with-out-str)])
+   (->> @!txs
+        transmogrify
+        pprint
+        with-out-str)])
 
 (defn view-viewer-ui []
   [:pre (-> @!view pprint with-out-str)])
