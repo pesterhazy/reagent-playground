@@ -3,6 +3,8 @@
             [clojure.pprint :refer [pprint]]
             [datascript.core :as d]))
 
+(def colors ["red" "blue" "brown"])
+
 (defonce !counter (r/atom 0))
 (defonce !view (r/atom {}))
 
@@ -77,6 +79,11 @@
                (->> (d/datoms @!conn :eavt e)
                     (map (fn [[e a v]] [:db/retract e a v])))))
 
+(defn cycle-color [e]
+  (let [color (->> (d/datoms @!conn :eavt e :todo/color) first :v)]
+    (d/transact! !conn
+                 [[:db/add e :todo/color (-> colors to-array (.indexOf color) inc (mod 3) colors)]])))
+
 (defn edit-ui [view]
   (into [:ul]
         (->> view
@@ -92,7 +99,10 @@
                             [:li {:key idx}
                              [:span {:style {:color (:todo/color ent)}}
                               (:todo/caption ent)]
-                             [:span " " [:a {:on-click #(remove-item (:db/id ent))} "(X)"]]])))))
+                             [:span " (" (:db/id ent) ")" " "]
+                             [:button {:on-click #(remove-item (:db/id ent))} "X"]
+                             [:span " "]
+                             [:button {:on-click #(cycle-color (:db/id ent))} "COL"]])))))
 
 (defn root-ui []
   [:div.p-5.my-form.bg-white
