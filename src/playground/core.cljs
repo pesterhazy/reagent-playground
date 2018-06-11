@@ -48,14 +48,28 @@
 (defn view-viewer-ui []
   [:pre (-> @!view pprint with-out-str)])
 
-(defn edit-ui []
-  )
+(defn edit-ui [view]
+  [:pre
+   (->> view
+        :ae
+        :todo/caption
+        keys
+        (map (fn [e]
+               (-> view :ea (get e))))
+        (map-indexed (fn [idx ent]
+                       [:div {:key idx}
+                        [:span {:style {:color (:todo/color ent)}}
+                         (:todo/caption ent)]]))
+        )])
 
 (defn root-ui []
   [:div.p-5.my-form.bg-white
    [:div
     [:h3 "Reagent playground"]
     [:p "Type into this input box"]
+
+    [:h4 "edit"]
+    [edit-ui @!view]
     [:h4 "view"]
     [view-viewer-ui]
     [:h4 "op log"]
