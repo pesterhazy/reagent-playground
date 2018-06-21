@@ -26,7 +26,9 @@
 
 (defn root-ui []
   (pprint the-ds)
-  [:pre (pr-str (mg/pull the-ds [{:document/slides '[*]}] the-root))])
+  [:pre (-> (mg/pull the-ds [{:document/slides '[*]}] the-root)
+            pprint
+            with-out-str)])
 
 ;; Reagent+Figwheel boilerplate
 
